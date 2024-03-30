@@ -6,6 +6,8 @@ const { successResponse } = require("./responsController.jsx");
 const { findWithId } = require("../services/findItem.jsx");
 const { error } = require("console");
 const { deleteImage } = require("../helper/deleteImage.jsx");
+const { createJSONWebToken } = require("../helper/jsonWebToken.jsx");
+const { jwtActivationKey } = require("../secret.jsx");
 
 const getUsers = async (req, res, next) => {
   try {
@@ -94,4 +96,32 @@ const deleteUserById = async (req, res, next) => {
   }
 };
 
-module.exports = { getUserById, getUsers, deleteUserById };
+// process Register
+const processRegister = async (req, res, next) => {
+  try {
+    const { name, email, password, phone, address } = req.body;
+
+    // exist user
+    const userExists = await User.exists({ email: email });
+    if (userExists) {
+      throw createError(409, "User with this Mail is already Exist");
+    }
+
+    // JSON web Token
+    const token = createJSONWebToken(
+      { name, email, password, phone, address },
+      jwtActivationKey,
+      "600"
+    );
+
+    return successResponse(res, {
+      statusCode: 200,
+      message: "user was Created successfully",
+      payload: { token },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { getUserById, getUsers, deleteUserById, processRegister };
