@@ -1,10 +1,11 @@
 const createError = require("http-errors");
-const fs = require("fs");
+const fs = require("fs").promises;
 
 const User = require("../models/userModel.jsx");
 const { successResponse } = require("./responsController.jsx");
 const { findWithId } = require("../services/findItem.jsx");
 const { error } = require("console");
+const { deleteImage } = require("../helper/deleteImage.jsx");
 
 const getUsers = async (req, res, next) => {
   try {
@@ -52,11 +53,11 @@ const getUsers = async (req, res, next) => {
   }
 };
 
-const getUser = async (req, res, next) => {
+const getUserById = async (req, res, next) => {
   try {
     const id = req.params.id;
     const options = { password: 0 };
-    const user = await findWithId(id, options);
+    const user = await findWithId(User, id, options);
 
     return successResponse(res, {
       statusCode: 200,
@@ -69,31 +70,28 @@ const getUser = async (req, res, next) => {
 };
 
 // Delete User
-const deleteUser = async (req, res, next) => {
+const deleteUserById = async (req, res, next) => {
   try {
     const id = req.params.id;
     const options = { password: 0 };
-    const user = await findWithId(id, options);
+    const user = await findWithId(User, id, options);
 
     const userImagePath = user.image;
-    fs.access(userImagePath, (err) => {
-      if (err) {
-        console.error("user Image does not exist");
-      } else {
-        fs.unlink(userImagePath, (err) => {
-          if (err) throw err;
-          console.log("user Image was deleted");
-        });
-      }
+
+    deleteImage(userImagePath);
+
+    await User.findByIdAndDelete({
+      _id: id,
+      isAdmin: false,
     });
 
     return successResponse(res, {
       statusCode: 200,
-      message: "user were Deleted successfully",
+      message: "user was Deleted successfully",
     });
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = { getUser, getUsers, deleteUser };
+module.exports = { getUserById, getUsers, deleteUserById };
