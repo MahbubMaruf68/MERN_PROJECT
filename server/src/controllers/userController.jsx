@@ -1,13 +1,13 @@
 const createError = require("http-errors");
 const fs = require("fs").promises;
-
 const User = require("../models/userModel.jsx");
 const { successResponse } = require("./responsController.jsx");
 const { findWithId } = require("../services/findItem.jsx");
 const { error } = require("console");
 const { deleteImage } = require("../helper/deleteImage.jsx");
 const { createJSONWebToken } = require("../helper/jsonWebToken.jsx");
-const { jwtActivationKey } = require("../secret.jsx");
+const { jwtActivationKey, clientURL } = require("../secret.jsx");
+const emailWithNodeMailer = require("../helper/email.jsx");
 
 const getUsers = async (req, res, next) => {
   try {
@@ -114,9 +114,28 @@ const processRegister = async (req, res, next) => {
       "600"
     );
 
+    // Prepare Email
+
+    const emailData = {
+      email,
+      subject: "Account Activation Email",
+      html: `<h2>Hello ${name} !</h2>
+  <p> Please Click Here To <a href="${clientURL}/api/users/activate/${token}" target="_blank">Activate Your Account</a> </p>
+  `,
+    };
+
+    // Email Send With Node Mailer
+
+    try {
+      await emailWithNodeMailer(emailData);
+    } catch (emailError) {
+      next(createError(500, "Failed to send verification email"));
+      return;
+    }
+
     return successResponse(res, {
       statusCode: 200,
-      message: "user was Created successfully",
+      message: `Please go to your ${email} for completing your registration process`,
       payload: { token },
     });
   } catch (error) {
@@ -124,4 +143,9 @@ const processRegister = async (req, res, next) => {
   }
 };
 
-module.exports = { getUserById, getUsers, deleteUserById, processRegister };
+module.exports = {
+  getUserById,
+  getUsers,
+  deleteUserById,
+  processRegister,
+};
