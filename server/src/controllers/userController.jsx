@@ -1,5 +1,6 @@
 const createError = require("http-errors");
 const fs = require("fs").promises;
+const jwt = require("jsonwebtoken");
 const User = require("../models/userModel.jsx");
 const { successResponse } = require("./responsController.jsx");
 const { findWithId } = require("../services/findItem.jsx");
@@ -111,11 +112,10 @@ const processRegister = async (req, res, next) => {
     const token = createJSONWebToken(
       { name, email, password, phone, address },
       jwtActivationKey,
-      "600"
+      "20h"
     );
 
-    // Prepare Email
-
+    // Email Data
     const emailData = {
       email,
       subject: "Account Activation Email",
@@ -143,9 +143,30 @@ const processRegister = async (req, res, next) => {
   }
 };
 
+// Activate User Account
+const activateUserAccount = async (req, res, next) => {
+  try {
+    const token = req.body.token;
+    if (!token) {
+      throw createError(404, "Token not Found");
+    }
+    const decoded = jwt.verify(token, jwtActivationKey);
+
+    await User.create(decoded);
+
+    return successResponse(res, {
+      statusCode: 201,
+      message: "User Was Registered Successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getUserById,
   getUsers,
   deleteUserById,
   processRegister,
+  activateUserAccount,
 };

@@ -9,13 +9,11 @@ const defaultImagePath =
 const jwtActivationKey =
   process.env.JWT_ACTIVATION_KEY || ghjkldfjhsaufaognru6457834nfrkwhwgj;
 
-const smtpUsername = process.env.SMTP_USERNAME || " ";
+const smtpUsername = process.env.SMTP_USERNAME;
 
-const smtpPassword = process.env.SMTP_PASSWORD || " ";
+const smtpPassword = process.env.SMTP_PASSWORD;
 
-// gonna be problem
-
-const clientURL = process.env.CLIENT_URL || " ";
+const clientURL = process.env.CLIENT_URL;
 
 module.exports = {
   serverPort,
